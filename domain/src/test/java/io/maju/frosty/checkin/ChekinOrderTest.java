@@ -161,7 +161,7 @@ class ChekinOrderTest extends UnitTest {
                 CheckinOrderItem.with("Item 1", BigDecimal.ZERO, 1, "123")
         );
 
-        final var expectedErrorMessage = "'item[0].price' should be greater than or equal to zero";
+        final var expectedErrorMessage = "'item[0].price' should be greater than zero";
         final var expectedErrorCount = 1;
 
         final var actualException = Assertions.assertThrows(NotificationException.class, () -> {
@@ -179,7 +179,7 @@ class ChekinOrderTest extends UnitTest {
                 CheckinOrderItem.with("Item 1", new BigDecimal("-10.75"), 1, "123")
         );
 
-        final var expectedErrorMessage = "'item[0].price' should be greater than or equal to zero";
+        final var expectedErrorMessage = "'item[0].price' should be greater than zero";
         final var expectedErrorCount = 1;
 
         final var actualException = Assertions.assertThrows(NotificationException.class, () -> {
@@ -501,7 +501,7 @@ class ChekinOrderTest extends UnitTest {
                 CheckinOrderItem.with("Item 1", new BigDecimal("10.7"), 1, "123")
         ));
 
-        final var expectedErrorMessage = "'item[1].price' should be greater than or equal to zero";
+        final var expectedErrorMessage = "'item[1].price' should be greater than zero";
         final var expectedErrorCount = 1;
 
         final var actualOrder = CheckinOrder.newOrder(
@@ -533,7 +533,7 @@ class ChekinOrderTest extends UnitTest {
                 CheckinOrderItem.with("Item 1", new BigDecimal("10.7"), 1, "123")
         ));
 
-        final var expectedErrorMessage = "'item[1].price' should be greater than or equal to zero";
+        final var expectedErrorMessage = "'item[1].price' should be greater than zero";
         final var expectedErrorCount = 1;
 
         final var actualOrder = CheckinOrder.newOrder(
@@ -547,7 +547,7 @@ class ChekinOrderTest extends UnitTest {
         Assertions.assertEquals(expectedOrderItems, actualOrder.items());
 
         expectedOrderItems.add(
-                CheckinOrderItem.with("M".repeat(3),BigDecimal.ZERO, 1, "789")
+                CheckinOrderItem.with("M".repeat(3), BigDecimal.ZERO, 1, "789")
         );
 
         final var actualException = Assertions.assertThrows(NotificationException.class, () -> {
@@ -652,5 +652,336 @@ class ChekinOrderTest extends UnitTest {
 
         Assertions.assertEquals(expectedErrorCount, actualException.getErrors().size());
         Assertions.assertEquals(expectedErrorMessage, actualException.getErrors().getFirst().message());
+    }
+
+    @Test
+    void givenAValidOrderItemsOrder_whenCallAddOrderItem_shouldReceiveOK() {
+        final var picole =
+                CheckinOrderItem.with("Picolé", new BigDecimal("10"), 1, "123");
+        final var sorvete =
+                CheckinOrderItem.with("Sorvete", new BigDecimal("10"), 1, "456");
+
+        final var expectedTotal = new BigDecimal("30.75");
+        final var expectedIsCanceled = false;
+        final var expectedItems = new ArrayList<>(List.of(
+                picole,
+                sorvete
+        ));
+
+        final var actualOrder = CheckinOrder.newOrder(
+                expectedItems,
+                expectedIsCanceled
+        );
+
+        Assertions.assertNotNull(actualOrder);
+        Assertions.assertNotEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(2, actualOrder.items().size());
+
+        final var actualCreatedAt = actualOrder.createdAt();
+        final var actualUpdatedAt = actualOrder.updatedAt();
+
+        actualOrder.addOrderItem(
+                CheckinOrderItem.with("Item 3", new BigDecimal("10.75"), 1, "789")
+        );
+
+        Assertions.assertEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(3, actualOrder.items().size());
+        Assertions.assertEquals(expectedItems, actualOrder.items());
+        Assertions.assertEquals(actualCreatedAt, actualOrder.createdAt());
+        Assertions.assertTrue(actualUpdatedAt.isBefore(actualOrder.updatedAt()));
+        Assertions.assertNull(actualOrder.deletedAt());
+    }
+
+    @Test
+    void givenAValidOrderItemsOrder_whenCallAddOrderItems_shouldReceiveOK() {
+        final var picole =
+                CheckinOrderItem.with("Picolé", new BigDecimal("10"), 1, "123");
+        final var sorvete =
+                CheckinOrderItem.with("Sorvete", new BigDecimal("10"), 1, "456");
+
+        final var expectedTotal = new BigDecimal("30.75");
+        final var expectedIsCanceled = false;
+        final var expectedItems = new ArrayList<>(List.of(
+                picole,
+                sorvete
+        ));
+
+        final var actualOrder = CheckinOrder.newOrder(
+                expectedItems,
+                expectedIsCanceled
+        );
+
+        Assertions.assertNotNull(actualOrder);
+        Assertions.assertNotEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(2, actualOrder.items().size());
+
+        final var actualCreatedAt = actualOrder.createdAt();
+        final var actualUpdatedAt = actualOrder.updatedAt();
+
+        final var casquinha =
+                CheckinOrderItem.with("Casquinha", new BigDecimal("10.75"), 1, "789");
+        actualOrder.addOrderItems(List.of(casquinha));
+
+        Assertions.assertEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(3, actualOrder.items().size());
+        Assertions.assertEquals(expectedItems, actualOrder.items());
+        Assertions.assertEquals(actualCreatedAt, actualOrder.createdAt());
+        Assertions.assertTrue(actualUpdatedAt.isBefore(actualOrder.updatedAt()));
+        Assertions.assertNull(actualOrder.deletedAt());
+    }
+
+    @Test
+    void givenAValidOrderItemsOrder_whenCallAddOrderItemsWithEmptyName_shouldReceiveAnError() {
+        final var picole =
+                CheckinOrderItem.with("Picolé", new BigDecimal("10"), 1, "123");
+        final var expectedIsCanceled = false;
+        final var expectedItems = new ArrayList<>(List.of(picole));
+
+        final var expectedErrorCount = 1;
+        final var expectedErrorMessage = "'item[1].name' should not be empty";
+
+        final var actualOrder = CheckinOrder.newOrder(expectedItems, expectedIsCanceled);
+
+        Assertions.assertNotNull(actualOrder);
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(1, actualOrder.items().size());
+
+        final var casquinha =
+                CheckinOrderItem.with(" ", new BigDecimal("10.75"), 1, "789");
+
+        final var actualException = Assertions.assertThrows(NotificationException.class, () -> {
+            actualOrder.addOrderItems(List.of(casquinha));
+        });
+
+        Assertions.assertEquals(expectedErrorCount, actualException.getErrors().size());
+        Assertions.assertEquals(expectedErrorMessage, actualException.getErrors().getFirst().message());
+    }
+
+    @Test
+    void givenAValidOrderItemsOrder_whenCallAddOrderItemsWithNameMustBetween3And255_shouldReceiveErrors() {
+        final var picole =
+                CheckinOrderItem.with("Picolé", new BigDecimal("10"), 1, "123");
+        final var expectedIsCanceled = false;
+        final var expectedItems = new ArrayList<>(List.of(picole));
+
+        final var expectedErrorCount = 2;
+        final var expectedErrorMessage = "'item[1].name' must be between 3 and 255 characters";
+
+        final var actualOrder = CheckinOrder.newOrder(expectedItems, expectedIsCanceled);
+
+        Assertions.assertNotNull(actualOrder);
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(1, actualOrder.items().size());
+
+        final var longName =
+                CheckinOrderItem.with("A".repeat(256), new BigDecimal("10.75"), 1, "789");
+
+        final var shortName =
+                CheckinOrderItem.with("A", new BigDecimal("10.75"), 1, "789");
+
+        final var actualException = Assertions.assertThrows(NotificationException.class, () -> {
+            actualOrder.addOrderItems(List.of(longName, shortName));
+        });
+
+        Assertions.assertEquals(expectedErrorCount, actualException.getErrors().size());
+        Assertions.assertEquals(expectedErrorMessage, actualException.getErrors().getFirst().message());
+    }
+
+    @Test
+    void givenAValidOrderItemsOrder_whenCallAddOrderItemsWithGreaterThanOrEqualZeroPrice_shouldReceiveErrors() {
+        final var picole =
+                CheckinOrderItem.with("Picolé", new BigDecimal("10"), 1, "123");
+        final var expectedIsCanceled = false;
+        final var expectedItems = new ArrayList<>(List.of(picole));
+
+        final var expectedErrorCount = 1;
+        final var expectedErrorMessage = "'item[1].price' should be greater than zero";
+
+        final var actualOrder = CheckinOrder.newOrder(expectedItems, expectedIsCanceled);
+
+        Assertions.assertNotNull(actualOrder);
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(1, actualOrder.items().size());
+
+        final var item =
+                CheckinOrderItem.with("Pipoca", BigDecimal.ZERO, 1, "789");
+
+        final var actualException = Assertions.assertThrows(NotificationException.class, () -> {
+            actualOrder.addOrderItems(List.of(item));
+        });
+
+        Assertions.assertEquals(expectedErrorCount, actualException.getErrors().size());
+        Assertions.assertEquals(expectedErrorMessage, actualException.getErrors().getFirst().message());
+    }
+
+    @Test
+    void givenAValidOrderItems_whenCallAddNullOrderItem_shouldReceiveOK() {
+        final var picole =
+                CheckinOrderItem.with("Picolé", new BigDecimal("10"), 1, "123");
+
+        final var expectedTotal = new BigDecimal("10");
+        final var expectedIsCanceled = false;
+        final var expectedItems = List.of(picole);
+
+        final var actualOrder = CheckinOrder.newOrder(
+                expectedItems,
+                expectedIsCanceled
+        );
+
+        Assertions.assertNotNull(actualOrder);
+        Assertions.assertEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(1, actualOrder.items().size());
+
+        final var actualCreatedAt = actualOrder.createdAt();
+        final var actualUpdatedAt = actualOrder.updatedAt();
+
+        actualOrder.addOrderItem(null);
+
+        Assertions.assertEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(1, actualOrder.items().size());
+        Assertions.assertEquals(expectedItems, actualOrder.items());
+        Assertions.assertEquals(actualCreatedAt, actualOrder.createdAt());
+        Assertions.assertEquals(actualUpdatedAt, actualOrder.updatedAt());
+        Assertions.assertNull(actualOrder.deletedAt());
+    }
+
+    @Test
+    void givenAValidOrderItems_whenCallAddNullOrderItems_shouldReceiveOK() {
+        final var picole =
+                CheckinOrderItem.with("Picolé", new BigDecimal("10"), 1, "123");
+
+        final var expectedTotal = new BigDecimal("10");
+        final var expectedIsCanceled = false;
+        final var expectedItems = List.of(picole);
+
+        final var actualOrder = CheckinOrder.newOrder(
+                expectedItems,
+                expectedIsCanceled
+        );
+
+        Assertions.assertNotNull(actualOrder);
+        Assertions.assertEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(1, actualOrder.items().size());
+
+        final var actualCreatedAt = actualOrder.createdAt();
+        final var actualUpdatedAt = actualOrder.updatedAt();
+
+        actualOrder.addOrderItems(null);
+
+        Assertions.assertEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(1, actualOrder.items().size());
+        Assertions.assertEquals(expectedItems, actualOrder.items());
+        Assertions.assertEquals(actualCreatedAt, actualOrder.createdAt());
+        Assertions.assertEquals(actualUpdatedAt, actualOrder.updatedAt());
+        Assertions.assertNull(actualOrder.deletedAt());
+    }
+
+    @Test
+    void givenAValidOrderItems_whenCallAddEmptyOrderItem_shouldReceiveOK() {
+        final var picole =
+                CheckinOrderItem.with("Picolé", new BigDecimal("10"), 1, "123");
+
+        final var expectedTotal = new BigDecimal("10");
+        final var expectedIsCanceled = false;
+        final var expectedItems = List.of(picole);
+
+        final var actualOrder = CheckinOrder.newOrder(
+                expectedItems,
+                expectedIsCanceled
+        );
+
+        Assertions.assertNotNull(actualOrder);
+        Assertions.assertEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(1, actualOrder.items().size());
+
+        final var actualCreatedAt = actualOrder.createdAt();
+        final var actualUpdatedAt = actualOrder.updatedAt();
+
+        actualOrder.addOrderItems(List.of());
+
+        Assertions.assertEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(1, actualOrder.items().size());
+        Assertions.assertEquals(expectedItems, actualOrder.items());
+        Assertions.assertEquals(actualCreatedAt, actualOrder.createdAt());
+        Assertions.assertEquals(actualUpdatedAt, actualOrder.updatedAt());
+        Assertions.assertNull(actualOrder.deletedAt());
+    }
+
+    @Test
+    void givenAValidOrderWithTwoOrderItems_whenCallRemoveOrderItem_shouldReceiveOK() {
+        final var picole =
+                CheckinOrderItem.with("Picolé", new BigDecimal("10"), 1, "123");
+        final var sorvete =
+                CheckinOrderItem.with("Sorvete", new BigDecimal("10"), 1, "456");
+
+        final var expectedTotal = new BigDecimal("10");
+        final var expectedIsCanceled = false;
+        final var expectedItems = List.of(sorvete);
+
+        final var actualOrder = CheckinOrder.newOrder(
+                new ArrayList<>(List.of(picole, sorvete)),
+                expectedIsCanceled
+        );
+
+        Assertions.assertNotNull(actualOrder);
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(2, actualOrder.items().size());
+
+        final var actualCreatedAt = actualOrder.createdAt();
+        final var actualUpdatedAt = actualOrder.updatedAt();
+
+        actualOrder.removeOrderItem(picole);
+
+        Assertions.assertEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(1, actualOrder.items().size());
+        Assertions.assertEquals(expectedItems, actualOrder.items());
+        Assertions.assertEquals(actualCreatedAt, actualOrder.createdAt());
+        Assertions.assertTrue(actualUpdatedAt.isBefore(actualOrder.updatedAt()));
+        Assertions.assertNull(actualOrder.deletedAt());
+    }
+
+    @Test
+    void givenAValidOrderWithTwoOrderItems_whenCallRemoveNullOrderItem_shouldReceiveOK() {
+        final var picole =
+                CheckinOrderItem.with("Picolé", new BigDecimal("10"), 1, "123");
+        final var sorvete =
+                CheckinOrderItem.with("Sorvete", new BigDecimal("10"), 1, "456");
+
+        final var expectedTotal = new BigDecimal("20");
+        final var expectedIsCanceled = false;
+        final var expectedItems = List.of(sorvete, picole);
+
+        final var actualOrder = CheckinOrder.newOrder(
+                expectedItems,
+                expectedIsCanceled
+        );
+
+        Assertions.assertNotNull(actualOrder);
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(2, actualOrder.items().size());
+
+        final var actualCreatedAt = actualOrder.createdAt();
+        final var actualUpdatedAt = actualOrder.updatedAt();
+
+        actualOrder.removeOrderItem(null);
+
+        Assertions.assertEquals(expectedTotal, actualOrder.total());
+        Assertions.assertFalse(actualOrder.isCanceled());
+        Assertions.assertEquals(2, actualOrder.items().size());
+        Assertions.assertEquals(expectedItems, actualOrder.items());
+        Assertions.assertEquals(actualCreatedAt, actualOrder.createdAt());
+        Assertions.assertEquals(actualUpdatedAt, actualOrder.updatedAt());
+        Assertions.assertNull(actualOrder.deletedAt());
     }
 }

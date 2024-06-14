@@ -64,7 +64,7 @@ public class CheckinOrderValidator extends Validator {
 
         if (item.price().compareTo(BigDecimal.ZERO) <= 0) {
             this.validationHandler()
-                    .append(new Error("'item[%d].price' should be greater than or equal to zero".formatted(index)));
+                    .append(new Error("'item[%d].price' should be greater than zero".formatted(index)));
             return;
         }
 

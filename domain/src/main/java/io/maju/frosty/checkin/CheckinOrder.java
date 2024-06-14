@@ -114,7 +114,7 @@ public class CheckinOrder extends AggregateRoot<CheckinOrderID> {
     }
 
     public List<CheckinOrderItem> items() {
-        return items;
+        return items != null ? Collections.unmodifiableList(items) : null;
     }
 
     public boolean isCanceled() {
@@ -148,6 +148,8 @@ public class CheckinOrder extends AggregateRoot<CheckinOrderID> {
         }
         this.items.add(anCheckinOrderItem);
         this.updatedAt = InstantUtils.now();
+
+        selfValidate();
         return this;
     }
 
@@ -157,6 +159,8 @@ public class CheckinOrder extends AggregateRoot<CheckinOrderID> {
         }
         this.items.addAll(checkinOrderItems);
         this.updatedAt = InstantUtils.now();
+
+        selfValidate();
         return this;
     }
 
