@@ -1,0 +1,5 @@
+rootProject.name = 'maju-ice-cream-api-java'
+include 'domain'
+include 'application'
+include 'infrastructure'
+
